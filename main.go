@@ -1089,6 +1089,10 @@ func (s *serverConfig) GetClusterConfig(ctx context.Context, in *pb.GetClusterCo
 	logger.Info("Received request GetClusterConfig: %v", in)
 	// 获取系统计算分区信息
 	//partitions, _ := utils.GetPatitionInfo()
+	logger.Info("Received request in.AccountName: %s", in.AccountName)
+	if len(in.AccountName) == 0 {
+		return &pb.GetClusterConfigResponse{Partitions: nil, SchedulerName: "slurm"}, nil
+	}
 	//获取账号关联分区
 	accountPartitionSqlConfig := "SELECT partition_name FROM account_partition WHERE account_name = ?"
 	accountPartitions, err2 := db.Query(accountPartitionSqlConfig, in.AccountName)
