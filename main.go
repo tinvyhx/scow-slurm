@@ -1076,17 +1076,46 @@ func (s *serverAccount) QueryAccountBlockStatus(ctx context.Context, in *pb.Quer
 // config service
 func (s *serverConfig) GetClusterConfig(ctx context.Context, in *pb.GetClusterConfigRequest) (*pb.GetClusterConfigResponse, error) {
 	var (
-		parts           []*pb.Partition // 定义返回的类型
-		qosName         string
-		qosList         []string
-		totalCpuInt     int
-		totalMemInt     int
-		totalNodeNumInt int
+		parts                []*pb.Partition // 定义返回的类型
+		qosName              string
+		qosList              []string
+		partitionName        string
+		accountPartitionList []string
+		totalCpuInt          int
+		totalMemInt          int
+		totalNodeNumInt      int
 	)
 	// 记录日志
 	logger.Info("Received request GetClusterConfig: %v", in)
 	// 获取系统计算分区信息
-	partitions, _ := utils.GetPatitionInfo()
+	//partitions, _ := utils.GetPatitionInfo()
+	//获取账号关联分区
+	accountPartitionSqlConfig := "SELECT partition_name FROM account_partition WHERE account_name = ?"
+	accountPartitions, err2 := db.Query(accountPartitionSqlConfig, in.AccountName)
+	if err2 != nil {
+		errInfo := &errdetails.ErrorInfo{
+			Reason: "SQL_QUERY_FAILED",
+		}
+		st := status.New(codes.Internal, err2.Error())
+		st, _ = st.WithDetails(errInfo)
+		return nil, st.Err()
+	}
+	defer accountPartitions.Close()
+	if accountPartitions.Next() {
+		err := accountPartitions.Scan(&partitionName)
+		if err != nil {
+			errInfo := &errdetails.ErrorInfo{
+				Reason: "SQL_QUERY_FAILED",
+			}
+			st := status.New(codes.Internal, err.Error())
+			st, _ = st.WithDetails(errInfo)
+			return nil, st.Err()
+		}
+		accountPartitionList = append(accountPartitionList, partitionName)
+	}
+	if len(accountPartitionList) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "The account %s is not assciated whth any partition.", in.AccountName)
+	}
 	// 查系统中的所有qos
 	qosSqlConfig := "SELECT name FROM qos_table WHERE deleted = 0"
 	rows, err := db.Query(qosSqlConfig)
@@ -1120,7 +1149,7 @@ func (s *serverConfig) GetClusterConfig(ctx context.Context, in *pb.GetClusterCo
 		st, _ = st.WithDetails(errInfo)
 		return nil, st.Err()
 	}
-	for _, partition := range partitions {
+	for _, partition := range accountPartitionList {
 		var (
 			totalGpus    uint32
 			comment      string
