@@ -11,7 +11,7 @@ import (
 
 func TestGetClusterConfig(t *testing.T) {
 	// Set up a connection to the server
-	conn, err := grpc.Dial("localhost:8972", grpc.WithInsecure())
+	conn, err := grpc.Dial("localhost:8999", grpc.WithInsecure())
 	if err != nil {
 		t.Fatalf("did not connect: %v", err)
 	}
@@ -19,7 +19,7 @@ func TestGetClusterConfig(t *testing.T) {
 	client := pb.NewConfigServiceClient(conn)
 
 	// Call the Add RPC with test data
-	req := &pb.GetClusterConfigRequest{}
+	req := &pb.GetClusterConfigRequest{AccountName: "ai_middle"}
 	res, err := client.GetClusterConfig(context.Background(), req)
 	if err != nil {
 		t.Fatalf("GetClusterConfig failed: %v", err)
