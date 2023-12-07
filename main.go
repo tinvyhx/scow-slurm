@@ -1118,7 +1118,7 @@ func (s *serverConfig) GetClusterConfig(ctx context.Context, in *pb.GetClusterCo
 		accountPartitionList = append(accountPartitionList, partitionName)
 	}
 	if len(accountPartitionList) == 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "The account %s is not assciated whth any partition.", in.AccountName)
+		return &pb.GetClusterConfigResponse{Partitions: nil, SchedulerName: "slurm"}, nil
 	}
 	// 查系统中的所有qos
 	qosSqlConfig := "SELECT name FROM qos_table WHERE deleted = 0"
