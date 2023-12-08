@@ -15,7 +15,8 @@ syntax = "proto3";
 package scow.scheduler_adapter;
 
 message GetClusterConfigRequest {
-  string account_name = 1;
+  string cluster = 1;
+  optional string account_name = 2;
 }
 
 // static configuration of partition
